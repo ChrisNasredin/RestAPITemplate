@@ -14,7 +14,7 @@ type Config struct {
 }
 
 type HTTPServer struct {
-	address string `yaml:"address"`
+	Address string `yaml:"address"`
 }
 
 func MustLoad() *Config {
