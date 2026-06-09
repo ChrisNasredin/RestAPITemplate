@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"HiveAPI/internal/lib"
+	"HiveAPI/internal/transport/http/resp"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -13,27 +13,27 @@ type ServiceInterface interface {
 
 type Handler struct {
 	service ServiceInterface
-	logger  *slog.Logger
+	log     *slog.Logger
 }
 
 func NewHandler(service ServiceInterface, logger *slog.Logger) *Handler {
 	return &Handler{
 		service: service,
-		logger:  logger,
+		log:     logger,
 	}
 }
 
-func (h *Handler) GetItem() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetItem() func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
 		idItem := r.PathValue("id")
 		id, err := strconv.ParseUint(idItem, 10, 32)
 
 		item, err := h.service.GetItem(uint(id))
 		if err != nil {
-			statusCode, message := lib.ResolveHTTPStatus(err, errorToHTTPStatus, h.logger)
-			lib.ResponseJson(w, map[string]string{"message": message}, statusCode)
-			return
+			return err
 		}
-		lib.ResponseJson(w, item, http.StatusOK)
+		h.log.Debug("Код после error")
+		resp.ResponseJson(w, item, http.StatusOK)
+		return nil
 	}
 }

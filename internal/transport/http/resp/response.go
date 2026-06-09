@@ -1,4 +1,4 @@
-package lib
+package resp
 
 import (
 	"encoding/json"

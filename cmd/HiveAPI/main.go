@@ -3,6 +3,7 @@ package main
 import (
 	"HiveAPI/internal/config"
 	"HiveAPI/internal/domain"
+	"HiveAPI/internal/transport/http/middleware"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,7 +27,11 @@ func main() {
 
 	router := http.NewServeMux()
 
-	router.Handle("GET /domain/{id}", domainHandler.GetItem())
+	// Middleware
+	mwErrHandler := middleware.ErrorHandler(domain.ErrorToHTTPStatus, log)
+	mwLogger := middleware.Logging(log)
+
+	router.Handle("GET /domain/{id}", mwLogger(mwErrHandler(domainHandler.GetItem())))
 
 	log.Info("starting server", slog.Any("address", cfg.HTTPServer.Address))
 

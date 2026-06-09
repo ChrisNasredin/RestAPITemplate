@@ -19,7 +19,7 @@ func NewRepository() *Repository {
 func (r *Repository) GetItem(id uint) (*Item, error) {
 	const op = "domain.Repository.GetItem"
 	if _, exists := r.storage[id]; !exists {
-		return nil, fmt.Errorf(op+"-> %w", ErrNotFound)
+		return nil, fmt.Errorf(op+"-> %w", ErrAlreadyExists)
 	}
 	return r.storage[id], nil
 }

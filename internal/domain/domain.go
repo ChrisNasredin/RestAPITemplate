@@ -5,19 +5,27 @@ import (
 	"net/http"
 )
 
+type ErrCode string
+
 var (
 	// Repository Errors
-	ErrNotFound      = fmt.Errorf("Not found")
-	ErrAlreadyExists = fmt.Errorf("Conflict")
+	ErrNotFound      = fmt.Errorf("not found")
+	ErrAlreadyExists = fmt.Errorf("the same instance already exist")
 
 	// Buisness Errors
-	ErrMaxCountReached = fmt.Errorf("Max count reached")
+	ErrMaxCountReached = fmt.Errorf("max count reached")
 )
 
-var errorToHTTPStatus = map[error]int{
+var ErrorToHTTPStatus = map[error]int{
 	ErrNotFound:        http.StatusNotFound,            // 404
 	ErrAlreadyExists:   http.StatusConflict,            // 409
 	ErrMaxCountReached: http.StatusUnprocessableEntity, // 422
+}
+
+var errorToErrCode = map[error]ErrCode{
+	ErrNotFound:        "ERR_NOT_FOUND",         // 404
+	ErrAlreadyExists:   "ERR_ALREADY_EXIST",     // 409
+	ErrMaxCountReached: "ERR_MAX_COUNT_REACHED", // 422
 }
 
 type Item struct {
