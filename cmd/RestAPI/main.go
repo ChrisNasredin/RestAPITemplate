@@ -3,8 +3,8 @@ package main
 import (
 	"HiveAPI/internal/config"
 	"HiveAPI/internal/domain"
-	"HiveAPI/internal/transport/rest"
-	"HiveAPI/internal/transport/rest/middleware"
+	"HiveAPI/internal/transport/http-server"
+	"HiveAPI/internal/transport/http-server/middleware"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,19 +19,21 @@ const (
 func main() {
 	cfg := config.MustLoad()
 	log := setupLogger(cfg.Env)
+	slog.SetDefault(log)
 	log.Info("starting server")
 	log.Debug("debug logging enabled")
 
 	domainRepository := domain.NewRepository()
 	domainService := domain.NewService(domainRepository)
-	domainHandler := rest.NewHandler(domainService, log)
+	domainHandler := http_server.NewHandler(domainService)
 
 	router := http.NewServeMux()
 
 	// Middleware
-	mwErrHandler := middleware.ErrorHandler(domain.ErrorToHTTPStatus, log)
+	mwErrHandler := middleware.ErrorHandler(http_server.ErrorToHTTPStatus)
 	mwChain := middleware.Chain(
-		middleware.Logging(log),
+		middleware.RequestID(log),
+		middleware.Logging,
 	)
 
 	router.Handle("GET /domain/{id}", mwChain(mwErrHandler(domainHandler.GetItem())))

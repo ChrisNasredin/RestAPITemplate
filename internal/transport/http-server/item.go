@@ -1,4 +1,4 @@
-package rest
+package http_server
 
 import (
 	"HiveAPI/internal/domain"
@@ -16,10 +16,9 @@ type Handler struct {
 	log     *slog.Logger
 }
 
-func NewHandler(service ServiceInterface, logger *slog.Logger) *Handler {
+func NewHandler(service ServiceInterface) *Handler {
 	return &Handler{
 		service: service,
-		log:     logger,
 	}
 }
 
@@ -34,7 +33,6 @@ func (h *Handler) GetItem() APIHandler {
 		if err != nil {
 			return err
 		}
-		h.log.Debug("Код после error")
 		ResponseJson(w, item, http.StatusOK)
 		return nil
 	}

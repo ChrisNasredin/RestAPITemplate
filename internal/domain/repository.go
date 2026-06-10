@@ -1,6 +1,9 @@
 package domain
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type Repository struct {
 	storage map[uint]*Item
@@ -19,7 +22,7 @@ func NewRepository() *Repository {
 func (r *Repository) GetItem(id uint) (*Item, error) {
 	const op = "domain.Repository.GetItem"
 	if _, exists := r.storage[id]; !exists {
-		return nil, fmt.Errorf(op+"-> %w", ErrAlreadyExists)
+		return nil, fmt.Errorf(op+" -> %w", errors.New("все жоска пизданулось, нам всем пизда"))
 	}
 	return r.storage[id], nil
 }

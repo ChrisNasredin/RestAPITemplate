@@ -1,4 +1,4 @@
-package rest
+package http_server
 
 import (
 	"HiveAPI/internal/domain"

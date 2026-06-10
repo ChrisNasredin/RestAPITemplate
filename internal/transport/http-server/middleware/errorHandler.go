@@ -1,23 +1,25 @@
 package middleware
 
 import (
-	"HiveAPI/internal/transport/rest"
+	"HiveAPI/internal/lib/sl"
+	"HiveAPI/internal/transport/http-server"
 	"errors"
 	"log/slog"
 	"net/http"
 )
 
-func ErrorHandler(errorMap map[error]int, log *slog.Logger) func(next rest.APIHandler) http.Handler {
-	return func(next rest.APIHandler) http.Handler {
+func ErrorHandler(errorMap map[error]int) func(next http_server.APIHandler) http.Handler {
+	return func(next http_server.APIHandler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log := sl.FromContext(r.Context())
 			err := next(w, r)
 			if err != nil {
 				status, message := resolveHTTPStatus(err, errorMap)
 				if status == http.StatusInternalServerError {
-					log.Error("unknown error", slog.Any("error", err))
+					log.Error("internal error", slog.Any("error", err))
 				}
-				errResponse := rest.ErrResponseJSON{Message: message}
-				rest.ResponseJson(w, errResponse, status)
+				errResponse := http_server.ErrResponseJSON{Message: message}
+				http_server.ResponseJson(w, errResponse, status)
 			}
 		})
 	}
