@@ -1,14 +1,14 @@
-package domain
+package rest
 
 import (
-	"HiveAPI/internal/transport/http/resp"
+	"HiveAPI/internal/domain"
 	"log/slog"
 	"net/http"
 	"strconv"
 )
 
 type ServiceInterface interface {
-	GetItem(id uint) (*Item, error)
+	GetItem(id uint) (*domain.Item, error)
 }
 
 type Handler struct {
@@ -23,17 +23,19 @@ func NewHandler(service ServiceInterface, logger *slog.Logger) *Handler {
 	}
 }
 
-func (h *Handler) GetItem() func(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) GetItem() APIHandler {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		idItem := r.PathValue("id")
 		id, err := strconv.ParseUint(idItem, 10, 32)
-
+		if err != nil {
+			return ErrBadRequest
+		}
 		item, err := h.service.GetItem(uint(id))
 		if err != nil {
 			return err
 		}
 		h.log.Debug("Код после error")
-		resp.ResponseJson(w, item, http.StatusOK)
+		ResponseJson(w, item, http.StatusOK)
 		return nil
 	}
 }

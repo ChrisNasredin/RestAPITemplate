@@ -2,7 +2,6 @@ package domain
 
 import (
 	"fmt"
-	"net/http"
 )
 
 type ErrCode string
@@ -15,12 +14,6 @@ var (
 	// Buisness Errors
 	ErrMaxCountReached = fmt.Errorf("max count reached")
 )
-
-var ErrorToHTTPStatus = map[error]int{
-	ErrNotFound:        http.StatusNotFound,            // 404
-	ErrAlreadyExists:   http.StatusConflict,            // 409
-	ErrMaxCountReached: http.StatusUnprocessableEntity, // 422
-}
 
 var errorToErrCode = map[error]ErrCode{
 	ErrNotFound:        "ERR_NOT_FOUND",         // 404
