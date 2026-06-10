@@ -23,15 +23,23 @@ func Logging(log *slog.Logger) func(next http.Handler) http.Handler {
 			wrapper := &WrapperWriter{ResponseWriter: w, StatusCode: http.StatusOK}
 			next.ServeHTTP(wrapper, r)
 			duration := time.Since(start)
-			log.Debug("",
+			attrs := []any{
 				slog.String("method", r.Method),
 				slog.String("path", r.URL.Path),
 				slog.String("uri", r.RequestURI),
 				slog.String("ip", r.RemoteAddr),
 				slog.String("user-agent", r.UserAgent()),
-				slog.String("duration", duration.String()),
+				slog.Duration("duration", duration),
 				slog.Int("status", wrapper.StatusCode),
-			)
+			}
+			switch {
+			case wrapper.StatusCode >= 500:
+				log.Error("server error", attrs...)
+			case wrapper.StatusCode >= 400:
+				log.Warn("client error", attrs...)
+			default:
+				log.Debug("request processed", attrs...)
+			}
 
 		})
 	}
