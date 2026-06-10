@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"HiveAPI/internal/lib/sl"
+	"RestAPI/internal/lib/sl"
 	"log/slog"
 	"net/http"
 	"time"

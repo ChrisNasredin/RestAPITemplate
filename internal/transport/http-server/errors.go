@@ -1,7 +1,7 @@
 package http_server
 
 import (
-	"HiveAPI/internal/domain"
+	"RestAPI/internal/domain"
 	"errors"
 	"net/http"
 )

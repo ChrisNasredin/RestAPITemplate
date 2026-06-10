@@ -1,10 +1,10 @@
 package main
 
 import (
-	"HiveAPI/internal/config"
-	"HiveAPI/internal/domain"
-	"HiveAPI/internal/transport/http-server"
-	"HiveAPI/internal/transport/http-server/middleware"
+	"RestAPI/internal/config"
+	"RestAPI/internal/domain"
+	"RestAPI/internal/transport/http-server"
+	"RestAPI/internal/transport/http-server/middleware"
 	"log/slog"
 	"net/http"
 	"os"

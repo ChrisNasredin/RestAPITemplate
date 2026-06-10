@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"HiveAPI/internal/lib/sl"
-	"HiveAPI/internal/transport/http-server"
+	"RestAPI/internal/lib/sl"
+	"RestAPI/internal/transport/http-server"
 	"errors"
 	"log/slog"
 	"net/http"
