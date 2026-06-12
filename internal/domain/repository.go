@@ -15,6 +15,7 @@ func NewRepository() *Repository {
 			1: &Item{ID: 1, ItemOpt1: "opt1", ItemOpt2: "opt2"},
 			2: &Item{ID: 2, ItemOpt1: "opt1", ItemOpt2: "opt2"},
 			3: &Item{ID: 3, ItemOpt1: "opt1", ItemOpt2: "opt2"},
+			4: nil,
 		},
 	}
 }
@@ -22,6 +23,7 @@ func NewRepository() *Repository {
 func (r *Repository) GetItem(id uint) (*Item, error) {
 	const op = "domain.Repository.GetItem"
 	if _, exists := r.storage[id]; !exists {
+		_ = r.storage[id].ItemOpt1
 		return nil, fmt.Errorf(op+" -> %w", errors.New("все жоска пизданулось, нам всем пизда"))
 	}
 	return r.storage[id], nil

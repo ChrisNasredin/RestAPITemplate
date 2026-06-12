@@ -32,6 +32,7 @@ func main() {
 	// Middleware
 	mwErrHandler := middleware.ErrorHandler(http_server.ErrorToHTTPStatus)
 	mwChain := middleware.Chain(
+		middleware.PanicRecovery,
 		middleware.RequestID(log),
 		middleware.Logging,
 	)
