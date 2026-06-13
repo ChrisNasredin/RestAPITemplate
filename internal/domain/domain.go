@@ -1,28 +1,28 @@
 package domain
 
 import (
-	"fmt"
+	"errors"
 )
 
 type ErrCode string
 
 var (
 	// Repository Errors
-	ErrNotFound      = fmt.Errorf("not found")
-	ErrAlreadyExists = fmt.Errorf("the same instance already exist")
+	ErrNotFound      = errors.New("not found")
+	ErrAlreadyExists = errors.New("the same instance already exist")
 
 	// Buisness Errors
-	ErrMaxCountReached = fmt.Errorf("max count reached")
+	ErrMaxCountReached = errors.New("max count reached")
 )
 
 var errorToErrCode = map[error]ErrCode{
-	ErrNotFound:        "ERR_NOT_FOUND",         // 404
-	ErrAlreadyExists:   "ERR_ALREADY_EXIST",     // 409
-	ErrMaxCountReached: "ERR_MAX_COUNT_REACHED", // 422
+	ErrNotFound:        "ERR_NOT_FOUND",
+	ErrAlreadyExists:   "ERR_ALREADY_EXIST",
+	ErrMaxCountReached: "ERR_MAX_COUNT_REACHED",
 }
 
 type Item struct {
-	ID       uint
+	ID       int64
 	ItemOpt1 string
 	ItemOpt2 string
 }

@@ -2,18 +2,17 @@ package http_server
 
 import (
 	"RestAPI/internal/domain"
-	"log/slog"
+	"context"
 	"net/http"
 	"strconv"
 )
 
 type ServiceInterface interface {
-	GetItem(id uint) (*domain.Item, error)
+	GetItem(ctx context.Context, id int64) (*domain.Item, error)
 }
 
 type Handler struct {
 	service ServiceInterface
-	log     *slog.Logger
 }
 
 func NewHandler(service ServiceInterface) *Handler {
@@ -29,7 +28,7 @@ func (h *Handler) GetItem() APIHandler {
 		if err != nil {
 			return ErrBadRequest
 		}
-		item, err := h.service.GetItem(uint(id))
+		item, err := h.service.GetItem(r.Context(), int64(id))
 		if err != nil {
 			return err
 		}
