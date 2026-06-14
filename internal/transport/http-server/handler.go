@@ -13,8 +13,5 @@ type ErrResponseJSON struct {
 
 func (h APIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("We are call method ServeHTTP")
-	err := h(w, r)
-	if err != nil {
-		ResponseJson(w, ErrResponseJSON{Message: "Internal Server Error"}, http.StatusInternalServerError)
-	}
+	_ = h(w, r)
 }

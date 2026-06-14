@@ -27,7 +27,10 @@ func HandleBody[T any](w *http.ResponseWriter, r *http.Request) (*T, error) {
 func Decode[T any](body io.ReadCloser) (T, error) {
 	var payload T
 	err := json.NewDecoder(body).Decode(&payload)
-	return payload, err
+	if err != nil {
+		return payload, ErrBadRequest
+	}
+	return payload, nil
 }
 
 func isValid[T any](payload T) error {

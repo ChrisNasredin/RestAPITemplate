@@ -7,6 +7,8 @@ import (
 	"RestAPI/internal/transport/http-server"
 	"RestAPI/internal/transport/http-server/middleware"
 	"context"
+	"flag"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,9 +21,29 @@ const (
 )
 
 func main() {
-	cfg := config.MustLoad()
+
+	migrateFlag := flag.Bool("migrate", false, "run migrations and exit")
+	configFlagPath := flag.String("config", "", "path to config file")
+	flag.Parse()
+
+	cfg := config.MustLoad(configFlagPath)
+
 	log := setupLogger(cfg.Env)
 	slog.SetDefault(log)
+
+	// Migrations
+	if *migrateFlag {
+		fmt.Println("Starting migrations...")
+		dsn := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+			cfg.Storage.User, cfg.Storage.Password, cfg.Storage.Host, cfg.Storage.DBName, cfg.Storage.SSLMode)
+		if err := postgres.RunMigrations(dsn); err != nil {
+			log.Error("Migration failed: %w\n", err)
+			os.Exit(1)
+		}
+		log.Info("Migrations finished successfully!")
+		os.Exit(0) // Выход, чтобы не запускать сервер
+	}
+
 	log.Info("starting server")
 	log.Debug("debug logging enabled")
 	ctx := context.Background()
