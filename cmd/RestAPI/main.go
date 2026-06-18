@@ -7,11 +7,15 @@ import (
 	"RestAPI/internal/transport/httpserver"
 	"RestAPI/internal/transport/httpserver/middleware"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 )
 
 const (
@@ -45,7 +49,8 @@ func main() {
 
 	log.Info("starting server")
 	log.Debug("debug logging enabled")
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 	storage, err := postgres.New(
 		ctx,
 		&postgres.StorageConfig{
@@ -92,9 +97,23 @@ func main() {
 		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	if err = srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Error("failed to start server", slog.Any("error", err))
+	go func() {
+		if err = srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("failed to start server", slog.Any("error", err))
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+	log.Info("stopping server")
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err = srv.Shutdown(shutdownCtx); err != nil {
+		log.Error("server forced to shutdown", slog.Any("error", err))
 	}
+	storage.Close()
+	log.Info("server stopped gracefully")
 }
 
 func setupLogger(env string) *slog.Logger {

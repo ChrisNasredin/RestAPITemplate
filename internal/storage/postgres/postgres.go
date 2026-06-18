@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -29,7 +28,6 @@ func New(ctx context.Context, cfg *StorageConfig) (*Storage, error) {
 	const op = "storage.postgres.NewRepository"
 	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.DBName, cfg.SSLMode)
-	log.Println(connStr)
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("%s: parse config: %w", op, err)
@@ -52,4 +50,8 @@ func New(ctx context.Context, cfg *StorageConfig) (*Storage, error) {
 	}
 
 	return &Storage{pool: pool}, nil
+}
+
+func (s *Storage) Close() {
+	s.pool.Close()
 }
