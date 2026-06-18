@@ -10,19 +10,19 @@ import (
 )
 
 type ItemStorage struct {
-	ID        int64     `db:"id"`
-	ItemOpt1  string    `db:"item_opt1"`
-	ItemOpt2  string    `db:"item_opt2"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-	DeletedAt time.Time `db:"deleted_at"`
+	ID        int64      `db:"id"`
+	ItemOpt1  string     `db:"item_opt1"`
+	ItemOpt2  string     `db:"item_opt2"`
+	CreatedAt time.Time  `db:"created_at"`
+	UpdatedAt time.Time  `db:"updated_at"`
+	DeletedAt *time.Time `db:"deleted_at"`
 }
 
 func (s *Storage) GetItemByID(ctx context.Context, id int64) (*domain.Item, error) {
 	const (
 		op    = "storage.postgres.GetItemByID"
 		query = `
-			SELECT id, item_opt1, item_opt2
+			SELECT id, item_opt1, item_opt2, created_at, updated_at, deleted_at
 			FROM items 
 			WHERE id = $1 
 			AND deleted_at IS NULL`
@@ -107,7 +107,7 @@ func (s *Storage) GetAllItemsCount(ctx context.Context) (int64, error) {
 	const (
 		op    = "storage.postgres.GetAllItemsCount"
 		query = `
-		SELECT count()
+		SELECT count(*)
 			FROM items 
 			WHERE deleted_at IS NULL
 			`

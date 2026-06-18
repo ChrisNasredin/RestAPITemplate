@@ -9,6 +9,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+const pgUniqueViolation = "23505"
+
 func mapErr(op string, err error) error {
 	if err == nil {
 		return nil
@@ -19,7 +21,7 @@ func mapErr(op string, err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
-		case "23505":
+		case pgUniqueViolation:
 			return domain.ErrAlreadyExists
 		}
 	}

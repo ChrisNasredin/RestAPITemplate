@@ -1,4 +1,4 @@
-package http_server
+package httpserver
 
 type CreateItemRequest struct {
 	ItemOpt1 string `json:"item_opt1" validate:"required"`

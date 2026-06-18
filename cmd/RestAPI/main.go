@@ -4,8 +4,8 @@ import (
 	"RestAPI/internal/config"
 	"RestAPI/internal/domain"
 	"RestAPI/internal/storage/postgres"
-	"RestAPI/internal/transport/http-server"
-	"RestAPI/internal/transport/http-server/middleware"
+	"RestAPI/internal/transport/httpserver"
+	"RestAPI/internal/transport/httpserver/middleware"
 	"context"
 	"flag"
 	"fmt"
@@ -26,7 +26,7 @@ func main() {
 	configFlagPath := flag.String("config", "", "path to config file")
 	flag.Parse()
 
-	cfg := config.MustLoad(configFlagPath)
+	cfg := config.MustLoad(*configFlagPath)
 
 	log := setupLogger(cfg.Env)
 	slog.SetDefault(log)
@@ -34,10 +34,9 @@ func main() {
 	// Migrations
 	if *migrateFlag {
 		fmt.Println("Starting migrations...")
-		dsn := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
-			cfg.Storage.User, cfg.Storage.Password, cfg.Storage.Host, cfg.Storage.DBName, cfg.Storage.SSLMode)
+		dsn := cfg.Storage.DSN()
 		if err := postgres.RunMigrations(dsn); err != nil {
-			log.Error("Migration failed: %w\n", err)
+			log.Error("Migration failed: %w\n", slog.Any("error", err))
 			os.Exit(1)
 		}
 		log.Info("Migrations finished successfully!")
@@ -68,12 +67,12 @@ func main() {
 	}
 
 	domainService := domain.NewService(storage)
-	domainHandler := http_server.NewHandler(domainService)
+	domainHandler := httpserver.NewHandler(domainService)
 
 	router := http.NewServeMux()
 
 	// Middleware
-	mwErrHandler := middleware.ErrorHandler(http_server.ErrorToHTTPStatus)
+	mwErrHandler := middleware.ErrorHandler(httpserver.ErrorToHTTPStatus)
 	mwChain := middleware.Chain(
 		middleware.PanicRecovery,
 		middleware.RequestID(log),
@@ -86,11 +85,14 @@ func main() {
 	log.Info("starting server", slog.Any("address", cfg.HTTPServer.Address))
 
 	srv := &http.Server{
-		Addr:    cfg.HTTPServer.Address,
-		Handler: router,
+		Addr:         cfg.HTTPServer.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.Timeout,
+		WriteTimeout: cfg.HTTPServer.Timeout,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	if err = srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Error("failed to start server", slog.Any("error", err))
 	}
 }

@@ -1,4 +1,4 @@
-package http_server
+package httpserver
 
 import (
 	"RestAPI/internal/domain"
@@ -25,7 +25,7 @@ func NewHandler(service ServiceInterface) *Handler {
 
 func (h *Handler) GetItem() APIHandler {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		const op = "transport.http-server.GetItem"
+		const op = "transport.httpserver.GetItem"
 		itemID := r.PathValue("id")
 		id, err := strconv.ParseUint(itemID, 10, 32)
 		if err != nil {
@@ -46,7 +46,7 @@ func (h *Handler) GetItem() APIHandler {
 
 func (h *Handler) AddItem() APIHandler {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		const op = "transport.http-server.AddItem"
+		const op = "transport.httpserver.AddItem"
 		body, err := HandleBody[CreateItemRequest](&w, r)
 		if err != nil {
 			return err

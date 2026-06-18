@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"RestAPI/internal/lib/sl"
-	"RestAPI/internal/transport/http-server"
+	"RestAPI/internal/transport/httpserver"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -15,8 +15,8 @@ type ErrResponseJSON struct {
 	Details map[string]string `json:"details"`
 }
 
-func ErrorHandler(errorMap map[error]int) func(next http_server.APIHandler) http.Handler {
-	return func(next http_server.APIHandler) http.Handler {
+func ErrorHandler(errorMap map[error]int) func(next httpserver.APIHandler) http.Handler {
+	return func(next httpserver.APIHandler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			log := sl.FromContext(r.Context())
 			err := next(w, r)
@@ -25,7 +25,7 @@ func ErrorHandler(errorMap map[error]int) func(next http_server.APIHandler) http
 				if status == http.StatusInternalServerError {
 					log.Error("internal error", slog.Any("error", err))
 				}
-				http_server.ResponseJson(w, errorResp, status)
+				httpserver.ResponseJson(w, errorResp, status)
 			}
 		})
 	}

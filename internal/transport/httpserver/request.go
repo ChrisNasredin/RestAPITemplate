@@ -1,7 +1,8 @@
-package http_server
+package httpserver
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -28,7 +29,7 @@ func Decode[T any](body io.ReadCloser) (T, error) {
 	var payload T
 	err := json.NewDecoder(body).Decode(&payload)
 	if err != nil {
-		return payload, ErrBadRequest
+		return payload, fmt.Errorf("%w: Error decoding body: %w", ErrBadRequest, err)
 	}
 	return payload, nil
 }
@@ -37,7 +38,7 @@ func isValid[T any](payload T) error {
 
 	err := validate.Struct(payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: Error validate body: %w", ErrBadRequest, err)
 	}
 	return nil
 }

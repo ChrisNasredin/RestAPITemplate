@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -15,7 +16,9 @@ type Config struct {
 }
 
 type HTTPServer struct {
-	Address string `yaml:"address" env:"HTTP_SERVER_ADDRESS" env-required:"true"`
+	Address     string        `yaml:"address" env:"HTTP_SERVER_ADDRESS" env-required:"true"`
+	Timeout     time.Duration `yaml:"timeout" env:"HTTP_SERVER_TIMEOUT" env-default:"4s"`
+	IdleTimeout time.Duration `yaml:"idle_timeout" env:"HTTP_SERVER_IDLE_TIMEOUT" env-default:"60s"`
 }
 
 type Storage struct {
@@ -27,6 +30,11 @@ type Storage struct {
 	StoragePool `yaml:"storage_pool"`
 }
 
+func (s *Storage) DSN() string {
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+		s.User, s.Password, s.Host, s.DBName, s.SSLMode)
+}
+
 type StoragePool struct {
 	MaxConns        int32         `yaml:"max_conns" env:"DB_MAX_CONNS" env-default:"20"`
 	MinConns        int32         `yaml:"min_conns" env:"DB_MIN_CONNS" env-default:"5"`
@@ -35,24 +43,20 @@ type StoragePool struct {
 	MaxConnIdleTime time.Duration `yaml:"max_conn_idle_time" env:"DB_MAX_CONN_IDLE_TIME" env-default:"5m"`
 }
 
-func MustLoad(configPath *string) *Config {
+func MustLoad(configPath string) *Config {
 	var cfg Config
-	if _, err := os.Stat(*configPath); err == nil {
-		if err := cleanenv.ReadConfig(*configPath, &cfg); err != nil {
+	if configPath != "" {
+		if _, err := os.Stat(configPath); os.IsNotExist(err) {
+			log.Fatalf("config file does not exist: %s", configPath)
+		}
+		if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 			log.Fatalf("failed to read config file: %s", err)
 		}
 	} else {
 		if err := cleanenv.ReadEnv(&cfg); err != nil {
 			help, _ := cleanenv.GetDescription(&cfg, nil)
-			log.Fatalf("Invalid configuration:\n%s\n error: %v\"", help, err)
+			log.Fatalf("invalid configuration (env): \n%s\n error: %v", help, err)
 		}
-	}
-	if _, err := os.Stat(*configPath); os.IsNotExist(err) {
-		log.Fatalf("config file does not exist: %s", *configPath)
-	}
-
-	if err := cleanenv.ReadConfig(*configPath, &cfg); err != nil {
-		log.Fatalf("failed to read config: %s", err)
 	}
 
 	return &cfg

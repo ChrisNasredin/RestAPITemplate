@@ -1,0 +1,5 @@
+all: false
+packages:
+  RestAPI/internal/domain:
+    interfaces:
+      RepositoryInterface:
