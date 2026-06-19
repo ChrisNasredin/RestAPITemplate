@@ -6,6 +6,7 @@ import (
 	"RestAPI/internal/storage/postgres"
 	"RestAPI/internal/transport/httpserver"
 	"RestAPI/internal/transport/httpserver/middleware"
+	"RestAPI/internal/transport/httpserver/observability"
 	"context"
 	"errors"
 	"flag"
@@ -71,7 +72,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Observability server
+	obsRouter := http.NewServeMux()
+	observability.NewHandler(obsRouter, storage)
+	obsSrv := &http.Server{
+		Addr:    cfg.Observability.Address,
+		Handler: obsRouter,
+	}
+	go func() {
+		if err := obsSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("failed to start observability server", slog.Any("error", err))
+		}
+	}()
+
+	// Service
 	domainService := domain.NewService(storage)
+	// Handlers
 	domainHandler := httpserver.NewHandler(domainService)
 
 	router := http.NewServeMux()
@@ -80,6 +96,7 @@ func main() {
 	mwErrHandler := middleware.ErrorHandler(httpserver.ErrorToHTTPStatus)
 	mwChain := middleware.Chain(
 		middleware.PanicRecovery,
+		middleware.Metrics,
 		middleware.RequestID(log),
 		middleware.Logging,
 	)
@@ -111,6 +128,9 @@ func main() {
 	defer cancel()
 	if err = srv.Shutdown(shutdownCtx); err != nil {
 		log.Error("server forced to shutdown", slog.Any("error", err))
+	}
+	if err = obsSrv.Shutdown(shutdownCtx); err != nil {
+		log.Error("observability server forced to shutdown", slog.Any("error", err))
 	}
 	storage.Close()
 	log.Info("server stopped gracefully")

@@ -7,16 +7,6 @@ import (
 	"time"
 )
 
-type WrapperWriter struct {
-	http.ResponseWriter
-	StatusCode int
-}
-
-func (w *WrapperWriter) WriteHeader(code int) {
-	w.ResponseWriter.WriteHeader(code)
-	w.StatusCode = code
-}
-
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log := sl.FromContext(r.Context())

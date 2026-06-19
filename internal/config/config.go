@@ -10,9 +10,10 @@ import (
 )
 
 type Config struct {
-	Env        string `yaml:"env" env:"ENV" env-default:"prod"`
-	HTTPServer `yaml:"http_server"`
-	Storage    `yaml:"storage"`
+	Env           string `yaml:"env" env:"ENV" env-default:"prod"`
+	HTTPServer    `yaml:"http_server"`
+	Storage       `yaml:"storage"`
+	Observability `yaml:"observability"`
 }
 
 type HTTPServer struct {
@@ -28,6 +29,10 @@ type Storage struct {
 	DBName      string `yaml:"dbname" env:"DB_NAME" env-required:"true"`
 	SSLMode     string `yaml:"sslmode" env:"DB_SSL_MODE" env-default:"disable"`
 	StoragePool `yaml:"storage_pool"`
+}
+
+type Observability struct {
+	Address string `yaml:"address" env:"OBSERVABILITY_ADDRESS" env-default:":9100"`
 }
 
 func (s *Storage) DSN() string {

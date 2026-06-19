@@ -14,3 +14,5 @@ storage:
     min_conns: 5
     max_conn_lifetime: 30m
     connect_timeout: 20s
+observability:
+  address: ":9100"
