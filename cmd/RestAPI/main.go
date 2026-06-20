@@ -103,6 +103,7 @@ func main() {
 
 	router.Handle("GET /domain/{id}", mwChain(mwErrHandler(domainHandler.GetItem())))
 	router.Handle("POST /domain", mwChain(mwErrHandler(domainHandler.AddItem())))
+	router.Handle("GET /domain", mwChain(mwErrHandler(domainHandler.GetAll())))
 
 	log.Info("starting server", slog.Any("address", cfg.HTTPServer.Address))
 

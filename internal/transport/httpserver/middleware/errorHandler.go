@@ -11,8 +11,8 @@ import (
 )
 
 type ErrResponseJSON struct {
-	Error   string            `json:"error"`
-	Details map[string]string `json:"details"`
+	Error   string `json:"error"`
+	Details any    `json:"details"`
 }
 
 func ErrorHandler(errorMap map[error]int) func(next httpserver.APIHandler) http.Handler {
@@ -45,9 +45,11 @@ func resolveHTTPStatus(err error, errorMap map[error]int) (int, *ErrResponseJSON
 		}
 	}
 	// Check errorMap
+	originalErr := err
 	for err != nil {
 		if status, exists := errorMap[err]; exists {
-			return status, &ErrResponseJSON{Error: err.Error()}
+			
+			return status, &ErrResponseJSON{Error: err.Error(), Details: originalErr.Error()}
 		}
 		err = errors.Unwrap(err)
 	}

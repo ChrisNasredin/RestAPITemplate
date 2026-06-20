@@ -75,17 +75,17 @@ func (s *Storage) CreateItem(ctx context.Context, item *domain.Item) (*domain.It
 	return item, nil
 }
 
-// TODO: сделать лимит и смещение
-func (s *Storage) GetAllItems(ctx context.Context) ([]*domain.Item, error) {
+func (s *Storage) GetAllItems(ctx context.Context, limit, offset int) ([]*domain.Item, error) {
 	const (
 		op    = "storage.postgres.GetAllItems"
 		query = `
-		SELECT id, item_opt1, item_opt2
+		SELECT id, item_opt1, item_opt2, created_at, updated_at, deleted_at
 			FROM items 
 			WHERE deleted_at IS NULL
+			LIMIT $1 OFFSET $2
 			`
 	)
-	itemsStorage, err := pgxutil.Select[ItemStorage](ctx, s.pool, query, nil, pgx.RowToStructByName[ItemStorage])
+	itemsStorage, err := pgxutil.Select[ItemStorage](ctx, s.pool, query, []any{limit, offset}, pgx.RowToStructByName[ItemStorage])
 	if err != nil {
 		return nil, mapErr(op, err)
 	}
@@ -103,7 +103,7 @@ func (s *Storage) GetAllItems(ctx context.Context) ([]*domain.Item, error) {
 	return result, nil
 }
 
-func (s *Storage) GetAllItemsCount(ctx context.Context) (int64, error) {
+func (s *Storage) GetAllItemsCount(ctx context.Context) (int, error) {
 	const (
 		op    = "storage.postgres.GetAllItemsCount"
 		query = `
@@ -112,7 +112,7 @@ func (s *Storage) GetAllItemsCount(ctx context.Context) (int64, error) {
 			WHERE deleted_at IS NULL
 			`
 	)
-	var count int64
+	var count int
 	err := s.pool.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, mapErr(op, err)

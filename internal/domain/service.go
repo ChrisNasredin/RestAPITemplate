@@ -8,6 +8,8 @@ import (
 type RepositoryInterface interface {
 	GetItemByID(ctx context.Context, id int64) (*Item, error)
 	CreateItem(ctx context.Context, item *Item) (*Item, error)
+	GetAllItems(ctx context.Context, limit, offset int) ([]*Item, error)
+	GetAllItemsCount(ctx context.Context) (int, error)
 }
 type Service struct {
 	repository RepositoryInterface
@@ -27,6 +29,21 @@ func (s *Service) GetItem(ctx context.Context, id int64) (*Item, error) {
 		return nil, fmt.Errorf(op+"-> %w", err)
 	}
 	return item, err
+}
+
+func (s *Service) GetAllItems(ctx context.Context, limit, offset int) ([]*Item, int, error) {
+	const op = "domain.Service.GetItem"
+
+	items, err := s.repository.GetAllItems(ctx, limit, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf(op+"-> %w", err)
+	}
+	count, err := s.repository.GetAllItemsCount(ctx)
+
+	if err != nil {
+		return nil, 0, fmt.Errorf(op+"-> %w", err)
+	}
+	return items, count, err
 }
 
 func (s *Service) CreateItem(ctx context.Context, item *Item) (*Item, error) {

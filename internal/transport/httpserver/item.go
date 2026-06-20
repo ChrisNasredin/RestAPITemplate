@@ -11,6 +11,7 @@ import (
 type ServiceInterface interface {
 	GetItem(ctx context.Context, id int64) (*domain.Item, error)
 	CreateItem(ctx context.Context, item *domain.Item) (*domain.Item, error)
+	GetAllItems(ctx context.Context, limit, offset int) ([]*domain.Item, int, error)
 }
 
 type Handler struct {
@@ -40,6 +41,37 @@ func (h *Handler) GetItem() APIHandler {
 			ItemOpt1: item.ItemOpt1,
 			ItemOpt2: item.ItemOpt2,
 		}, http.StatusOK)
+		return nil
+	}
+}
+
+func (h *Handler) GetAll() APIHandler {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		const op = "transport.httpserver.GetAll"
+		limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+		offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+		if err != nil {
+			// TODO: Проверить, что ошибка корректно отдается юзеру
+			return fmt.Errorf("%w: %s", ErrBadRequest, "wrong limit/offset")
+		}
+		items, count, err := h.service.GetAllItems(r.Context(), limit, offset)
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		var responseItems []*GetItemResponse
+		for _, item := range items {
+			newItem := &GetItemResponse{
+				ID:       item.ID,
+				ItemOpt1: item.ItemOpt1,
+				ItemOpt2: item.ItemOpt2,
+			}
+			responseItems = append(responseItems, newItem)
+		}
+		resp := &GetAllItemsResponse{
+			Items: responseItems,
+			Count: count,
+		}
+		ResponseJson(w, &resp, http.StatusOK)
 		return nil
 	}
 }

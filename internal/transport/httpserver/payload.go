@@ -12,3 +12,8 @@ type CreateItemResponse struct {
 }
 
 type GetItemResponse = CreateItemResponse
+
+type GetAllItemsResponse struct {
+	Items []*GetItemResponse `json:"items"`
+	Count int                `json:"count"`
+}
