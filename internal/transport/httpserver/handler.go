@@ -7,8 +7,8 @@ import (
 
 type APIHandler func(w http.ResponseWriter, r *http.Request) error
 
-type ErrResponseJSON struct {
-	Message string
+type MessageResponseJSON struct {
+	Message string `json:"message"`
 }
 
 func (h APIHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

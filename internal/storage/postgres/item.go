@@ -49,6 +49,22 @@ func (s *Storage) GetItemByID(ctx context.Context, id int64) (*domain.Item, erro
 	}, nil
 }
 
+func (s *Storage) DeleteItemByID(ctx context.Context, id int64) error {
+	const (
+		op    = "storage.postgres.GetItemByID"
+		query = `
+			UPDATE items 
+			SET deleted_at = NOW()
+			WHERE id = $1 
+			AND deleted_at IS NULL`
+	)
+	err := s.pool.QueryRow(ctx, query, id).Scan()
+	if err != nil {
+		return mapErr(op, err)
+	}
+	return nil
+}
+
 func (s *Storage) CreateItem(ctx context.Context, item *domain.Item) (*domain.Item, error) {
 	const (
 		op    = "storage.postgres.CreateItem"

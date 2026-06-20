@@ -12,6 +12,7 @@ type ServiceInterface interface {
 	GetItem(ctx context.Context, id int64) (*domain.Item, error)
 	CreateItem(ctx context.Context, item *domain.Item) (*domain.Item, error)
 	GetAllItems(ctx context.Context, limit, offset int) ([]*domain.Item, int, error)
+	DeleteItem(ctx context.Context, id int64) error
 }
 
 type Handler struct {
@@ -96,6 +97,25 @@ func (h *Handler) AddItem() APIHandler {
 			ItemOpt1: createdItem.ItemOpt1,
 			ItemOpt2: createdItem.ItemOpt2,
 		}, http.StatusCreated)
+		return nil
+	}
+}
+
+func (h *Handler) DeleteItem() APIHandler {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		const op = "transport.httpserver.GetItem"
+		itemID := r.PathValue("id")
+		id, err := strconv.ParseUint(itemID, 10, 32)
+		if err != nil {
+			return ErrBadRequest
+		}
+		err = h.service.DeleteItem(r.Context(), int64(id))
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		ResponseJson(w, &MessageResponseJSON{
+			Message: "Success",
+		}, http.StatusAccepted)
 		return nil
 	}
 }
