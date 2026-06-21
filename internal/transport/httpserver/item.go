@@ -13,6 +13,7 @@ type ServiceInterface interface {
 	CreateItem(ctx context.Context, item *domain.Item) (*domain.Item, error)
 	GetAllItems(ctx context.Context, limit, offset int) ([]*domain.Item, int, error)
 	DeleteItem(ctx context.Context, id int64) error
+	UpdateItem(ctx context.Context, item *domain.UpdateItemInput, id int64) (*domain.Item, error)
 }
 
 type Handler struct {
@@ -116,6 +117,35 @@ func (h *Handler) DeleteItem() APIHandler {
 		ResponseJson(w, &MessageResponseJSON{
 			Message: "Success",
 		}, http.StatusAccepted)
+		return nil
+	}
+}
+
+func (h *Handler) UpdateItem() APIHandler {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		const op = "transport.httpserver.UpdateItem"
+		itemID := r.PathValue("id")
+		id, err := strconv.ParseUint(itemID, 10, 32)
+		if err != nil {
+			return ErrBadRequest
+		}
+		body, err := HandleBody[UpdateItemRequest](&w, r)
+		if err != nil {
+			return err
+		}
+		item := &domain.UpdateItemInput{
+			ItemOpt1: body.ItemOpt1,
+			ItemOpt2: body.ItemOpt2,
+		}
+		updatedItem, err := h.service.UpdateItem(r.Context(), item, int64(id))
+		if err != nil {
+			return fmt.Errorf("%s: %w", op, err)
+		}
+		ResponseJson(w, &GetItemResponse{
+			ID:       updatedItem.ID,
+			ItemOpt1: updatedItem.ItemOpt1,
+			ItemOpt2: updatedItem.ItemOpt2,
+		}, http.StatusOK)
 		return nil
 	}
 }

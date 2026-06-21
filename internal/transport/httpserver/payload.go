@@ -17,3 +17,8 @@ type GetAllItemsResponse struct {
 	Items []*GetItemResponse `json:"items"`
 	Count int                `json:"count"`
 }
+
+type UpdateItemRequest struct {
+	ItemOpt1 *string `json:"item_opt1"`
+	ItemOpt2 *string `json:"item_opt2"`
+}

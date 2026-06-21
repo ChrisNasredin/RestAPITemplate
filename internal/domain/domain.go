@@ -26,3 +26,8 @@ type Item struct {
 	ItemOpt1 string
 	ItemOpt2 string
 }
+
+type UpdateItemInput struct {
+	ItemOpt1 *string
+	ItemOpt2 *string
+}

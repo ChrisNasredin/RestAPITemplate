@@ -10,7 +10,8 @@ type RepositoryInterface interface {
 	CreateItem(ctx context.Context, item *Item) (*Item, error)
 	GetAllItems(ctx context.Context, limit, offset int) ([]*Item, error)
 	GetAllItemsCount(ctx context.Context) (int, error)
-	DeleteItemByID(ctx context.Context, id int64) error
+	DeleteItem(ctx context.Context, id int64) error
+	UpdateItem(ctx context.Context, item *UpdateItemInput, id int64) (*Item, error)
 }
 type Service struct {
 	repository RepositoryInterface
@@ -34,7 +35,7 @@ func (s *Service) GetItem(ctx context.Context, id int64) (*Item, error) {
 
 func (s *Service) DeleteItem(ctx context.Context, id int64) error {
 	const op = "domain.Service.DeleteItem"
-	err := s.repository.DeleteItemByID(ctx, id)
+	err := s.repository.DeleteItem(ctx, id)
 	if err != nil {
 		return fmt.Errorf(op+"-> %w", err)
 	}
@@ -64,4 +65,14 @@ func (s *Service) CreateItem(ctx context.Context, item *Item) (*Item, error) {
 		return nil, fmt.Errorf(op+"-> %w", err)
 	}
 	return item, err
+}
+
+func (s *Service) UpdateItem(ctx context.Context, item *UpdateItemInput, id int64) (*Item, error) {
+	const op = "domain.Service.UpdateItem"
+
+	updatedItem, err := s.repository.UpdateItem(ctx, item, id)
+	if err != nil {
+		return nil, fmt.Errorf(op+"-> %w", err)
+	}
+	return updatedItem, nil
 }
