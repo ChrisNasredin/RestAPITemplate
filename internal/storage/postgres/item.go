@@ -165,3 +165,20 @@ func (s *Storage) UpdateItem(ctx context.Context, item *domain.UpdateItemInput, 
 		ItemOpt2: *updatedItem.ItemOpt2,
 	}, nil
 }
+
+func (s *Storage) ItemsCount(ctx context.Context) (int64, error) {
+	const (
+		op    = "storage.postgres.ItemCount"
+		query = `
+		SELECT count(*)
+			FROM items 
+			WHERE deleted_at IS NULL
+			`
+	)
+	var count int64
+	err := s.pool.QueryRow(ctx, query).Scan(&count)
+	if err != nil {
+		return 0, mapErr(op, err)
+	}
+	return count, nil
+}

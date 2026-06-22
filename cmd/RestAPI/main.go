@@ -3,6 +3,7 @@ package main
 import (
 	"RestAPI/internal/config"
 	"RestAPI/internal/domain"
+	"RestAPI/internal/metrics"
 	"RestAPI/internal/storage/postgres"
 	"RestAPI/internal/transport/httpserver"
 	"RestAPI/internal/transport/httpserver/middleware"
@@ -84,6 +85,9 @@ func main() {
 			log.Error("failed to start observability server", slog.Any("error", err))
 		}
 	}()
+
+	// Buisness Metrics Tracker
+	go metrics.TrackBusinessMetrics(storage, 15*time.Second)
 
 	// Service
 	domainService := domain.NewService(storage)
