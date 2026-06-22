@@ -104,7 +104,7 @@ func (h *Handler) AddItem() APIHandler {
 
 func (h *Handler) DeleteItem() APIHandler {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		const op = "transport.httpserver.GetItem"
+		const op = "transport.httpserver.DeleteItem"
 		itemID := r.PathValue("id")
 		id, err := strconv.ParseUint(itemID, 10, 32)
 		if err != nil {

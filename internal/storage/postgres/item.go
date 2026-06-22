@@ -51,7 +51,7 @@ func (s *Storage) GetItemByID(ctx context.Context, id int64) (*domain.Item, erro
 
 func (s *Storage) DeleteItem(ctx context.Context, id int64) error {
 	const (
-		op    = "storage.postgres.GetItemByID"
+		op    = "storage.postgres.DeleteItem"
 		query = `
 			UPDATE items 
 			SET deleted_at = NOW()

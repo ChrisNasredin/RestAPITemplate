@@ -98,7 +98,7 @@ func New(cfg *config.Config, log *slog.Logger) (*App, error) {
 	}, nil
 }
 
-func (a *App) Run() error {
+func (a *App) Run() {
 	go metrics.TrackBusinessMetrics(a.storage, 15*time.Second)
 
 	a.log.Info("starting Observability server", slog.String("address", a.cfg.Observability.Address))
@@ -114,7 +114,6 @@ func (a *App) Run() error {
 			a.log.Error("failed to start server", slog.Any("error", err))
 		}
 	}()
-	return nil
 }
 
 func (a *App) Stop(ctx context.Context) {

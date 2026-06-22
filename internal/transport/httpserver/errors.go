@@ -8,11 +8,13 @@ import (
 
 var (
 	ErrBadRequest = errors.New("bad request")
+	ErrJSONDecode = errors.New("json decode error")
 )
 
 var ErrorToHTTPStatus = map[error]int{
 	domain.ErrNotFound:        http.StatusNotFound,            // 404
 	domain.ErrAlreadyExists:   http.StatusConflict,            // 409
 	domain.ErrMaxCountReached: http.StatusUnprocessableEntity, // 422
-	ErrBadRequest:             http.StatusBadRequest,          //400
+	ErrBadRequest:             http.StatusBadRequest,
+	ErrJSONDecode:             http.StatusBadRequest, //400
 }

@@ -48,8 +48,11 @@ func resolveHTTPStatus(err error, errorMap map[error]int) (int, *ErrResponseJSON
 	originalErr := err
 	for err != nil {
 		if status, exists := errorMap[err]; exists {
-			
-			return status, &ErrResponseJSON{Error: err.Error(), Details: originalErr.Error()}
+			// Обработаем этот тип отдельно, потому что там в полной ошибке содержатся подробности
+			if errors.Is(err, httpserver.ErrJSONDecode) {
+				return status, &ErrResponseJSON{Error: err.Error(), Details: originalErr.Error()}
+			}
+			return status, &ErrResponseJSON{Error: err.Error()}
 		}
 		err = errors.Unwrap(err)
 	}
