@@ -3,7 +3,10 @@ package middleware
 import (
 	"RestAPI/internal/lib/sl"
 	"RestAPI/internal/transport/httpserver"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 
@@ -14,6 +17,16 @@ type ErrResponseJSON struct {
 	Error   string `json:"error"`
 	Details any    `json:"details"`
 }
+
+var (
+	// Validation JSON Errors
+	validationErr validator.ValidationErrors
+	// JSON Decoding Errors
+	JSONSyntaxErr         *json.SyntaxError
+	JSONUnmarshTypeErr    *json.UnmarshalTypeError
+	JSONInvalidUnmarshErr *json.InvalidUnmarshalError
+	JSONEmpty             = io.EOF
+)
 
 func ErrorHandler(errorMap map[error]int) func(next httpserver.APIHandler) http.Handler {
 	return func(next httpserver.APIHandler) http.Handler {
@@ -32,26 +45,29 @@ func ErrorHandler(errorMap map[error]int) func(next httpserver.APIHandler) http.
 }
 
 func resolveHTTPStatus(err error, errorMap map[error]int) (int, *ErrResponseJSON) {
+	// TODO: Убрать в функцию
 	// Check Validation Error
-	var ve validator.ValidationErrors
-	if errors.As(err, &ve) {
+	if errors.As(err, &validationErr) {
 		details := make(map[string]string)
-		for _, fe := range ve {
+		for _, fe := range validationErr {
 			details[fe.Field()] = msgForTag(fe)
 		}
-		return http.StatusBadRequest, &ErrResponseJSON{
+		return http.StatusUnprocessableEntity, &ErrResponseJSON{
 			Error:   "Validation Error",
 			Details: details,
 		}
 	}
+
+	if details, isValidationErr := handleDecodeError(err); isValidationErr {
+		return http.StatusBadRequest, &ErrResponseJSON{
+			Error:   "JSON Decode Error",
+			Details: details,
+		}
+	}
+
 	// Check errorMap
-	originalErr := err
 	for err != nil {
 		if status, exists := errorMap[err]; exists {
-			// Обработаем этот тип отдельно, потому что там в полной ошибке содержатся подробности
-			if errors.Is(err, httpserver.ErrJSONDecode) {
-				return status, &ErrResponseJSON{Error: err.Error(), Details: originalErr.Error()}
-			}
 			return status, &ErrResponseJSON{Error: err.Error()}
 		}
 		err = errors.Unwrap(err)
@@ -74,4 +90,26 @@ func msgForTag(fe validator.FieldError) string {
 	default:
 		return "Invalid value"
 	}
+}
+
+func handleDecodeError(err error) (string, bool) {
+	if errors.Is(err, JSONEmpty) {
+		return "Empty json body", true
+	}
+	if errors.As(err, &JSONSyntaxErr) {
+		return fmt.Sprintf("JSON syntax error: %s", JSONSyntaxErr.Error()), true
+	}
+	if errors.As(err, &JSONUnmarshTypeErr) {
+		return fmt.Sprintf(
+			"JSON type error: field %q has type %s, require type %s",
+			JSONUnmarshTypeErr.Field,
+			JSONUnmarshTypeErr.Value,
+			JSONUnmarshTypeErr.Type,
+		), true
+	}
+	if errors.As(err, &JSONInvalidUnmarshErr) {
+		// Ошибка декодинга, но должна пятисотить и логироваться
+		return "", false
+	}
+	return "", false
 }
