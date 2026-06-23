@@ -3,6 +3,7 @@ package postgres
 import (
 	"RestAPI/internal/domain"
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -50,6 +51,7 @@ func (s *Storage) GetItemByID(ctx context.Context, id int64) (*domain.Item, erro
 }
 
 func (s *Storage) DeleteItem(ctx context.Context, id int64) error {
+	// TODO: Метод возвращает ошибку, переделать на exec
 	const (
 		op    = "storage.postgres.DeleteItem"
 		query = `
@@ -58,9 +60,12 @@ func (s *Storage) DeleteItem(ctx context.Context, id int64) error {
 			WHERE id = $1 
 			AND deleted_at IS NULL`
 	)
-	err := s.pool.QueryRow(ctx, query, id).Scan()
+	cmdTag, err := s.pool.Exec(ctx, query, id)
 	if err != nil {
 		return mapErr(op, err)
+	}
+	if cmdTag.RowsAffected() == 0 {
+		return fmt.Errorf("%w: Item %d Not Found", domain.ErrNotFound, id)
 	}
 	return nil
 }

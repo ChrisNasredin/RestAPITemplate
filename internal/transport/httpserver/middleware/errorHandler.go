@@ -34,7 +34,7 @@ func ErrorHandler(errorMap map[error]int) func(next httpserver.APIHandler) http.
 			log := sl.FromContext(r.Context())
 			err := next(w, r)
 			if err != nil {
-				status, errorResp := resolveHTTPStatus(err, errorMap)
+				status, errorResp := handleError(err, errorMap)
 				if status == http.StatusInternalServerError {
 					log.Error("internal error", slog.Any("error", err))
 				}
@@ -44,34 +44,28 @@ func ErrorHandler(errorMap map[error]int) func(next httpserver.APIHandler) http.
 	}
 }
 
-func resolveHTTPStatus(err error, errorMap map[error]int) (int, *ErrResponseJSON) {
-	// TODO: Убрать в функцию
+func handleError(err error, errorMap map[error]int) (int, *ErrResponseJSON) {
 	// Check Validation Error
-	if errors.As(err, &validationErr) {
-		details := make(map[string]string)
-		for _, fe := range validationErr {
-			details[fe.Field()] = msgForTag(fe)
-		}
+	if details, isValidationErr := handleValidationError(err); isValidationErr {
 		return http.StatusUnprocessableEntity, &ErrResponseJSON{
 			Error:   "Validation Error",
 			Details: details,
 		}
 	}
 
-	if details, isValidationErr := handleDecodeError(err); isValidationErr {
+	// Check JSON Decode Error
+	if details, isDecodeErr := handleDecodeError(err); isDecodeErr {
 		return http.StatusBadRequest, &ErrResponseJSON{
 			Error:   "JSON Decode Error",
 			Details: details,
 		}
 	}
 
-	// Check errorMap
-	for err != nil {
-		if status, exists := errorMap[err]; exists {
-			return status, &ErrResponseJSON{Error: err.Error()}
-		}
-		err = errors.Unwrap(err)
+	// Check Domain Error
+	if statusCode, domainErr, isDomainError := HandleDomainErr(err, errorMap); isDomainError {
+		return statusCode, domainErr
 	}
+
 	return http.StatusInternalServerError, &ErrResponseJSON{
 		Error: "Internal Server Error",
 	}
@@ -112,4 +106,27 @@ func handleDecodeError(err error) (string, bool) {
 		return "", false
 	}
 	return "", false
+}
+
+func handleValidationError(err error) (map[string]string, bool) {
+	if errors.As(err, &validationErr) {
+		details := make(map[string]string)
+		for _, fe := range validationErr {
+			details[fe.Field()] = msgForTag(fe)
+		}
+		return details, true
+	}
+	return nil, false
+}
+
+func HandleDomainErr(err error, errorMap map[error]int) (int, *ErrResponseJSON, bool) {
+	originalErr := err
+	for err != nil {
+		if status, exists := errorMap[err]; exists {
+			return status, &ErrResponseJSON{Error: err.Error(), Details: originalErr.Error()}, true
+		}
+		originalErr = err
+		err = errors.Unwrap(err)
+	}
+	return 0, nil, false
 }

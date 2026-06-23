@@ -16,13 +16,13 @@ func mapErr(op string, err error) error {
 		return nil
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
-		return domain.ErrNotFound
+		return fmt.Errorf("%w: item does not exist", domain.ErrNotFound)
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		switch pgErr.Code {
 		case pgUniqueViolation:
-			return domain.ErrAlreadyExists
+			return fmt.Errorf("%w: such item already exist", domain.ErrAlreadyExists)
 		}
 	}
 	return fmt.Errorf("%s: %w", op, err)
