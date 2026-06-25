@@ -1,0 +1,48 @@
+version: '3'
+
+vars:
+  BINARY_NAME: app
+  BUILD_DIR: bin
+  CONFIGFILE: config.yml
+
+tasks:
+  default:
+    desc: Список всех доступных команд
+    cmds:
+      - task --list
+
+  init-lint:
+    desc: Установка golangci-lint (если не установлен)
+    internal: true
+    cmds:
+      - which golangci-lint || brew install golangci-lint || curl -sSfL https://githubusercontent.com | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+
+  lint:
+    desc: Запуск линтера golangci-lint
+    deps: [init-lint]
+    cmds:
+      - golangci-lint run ./...
+
+  build:
+    desc: Сборка бинарного файла
+    cmds:
+      - mkdir -p {{.BUILD_DIR}}
+      - go build -o {{.BUILD_DIR}}/{{.BINARY_NAME}} main.go
+
+  run:
+    desc: Запуск проекта
+    cmds:
+      - go run cmd/RestAPI/main.go --config {{.CONFIGFILE}}
+
+  clean:
+    desc: Очистка скомпилированных файлов
+    cmds:
+      - rm -rf {{.BUILD_DIR}}
+  mock:
+    desc: Сгенерировать моки
+    cmds:
+      - mockery
+  postgres-up:
+    desc: Поднять докер-контейнер с базой
+    cmds:
+      - docker start postgres-items
