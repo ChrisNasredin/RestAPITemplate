@@ -34,6 +34,8 @@ func TestCRUD(t *testing.T) {
 		expectedBody       string
 		expectedHTTPStatus int
 		mockDBMethods      []func(m *mocks.MockRepositoryInterface)
+		// Existing headers in response
+		responseHeaders []string
 	}{
 		{
 			name:   "Success Create Item",
@@ -56,6 +58,7 @@ func TestCRUD(t *testing.T) {
 						Once()
 				},
 			},
+			responseHeaders: []string{"X-Request-Id"},
 		},
 	}
 	//// Success Create
@@ -107,6 +110,10 @@ func TestCRUD(t *testing.T) {
 
 			assert.Equal(t, tc.expectedHTTPStatus, rr.Code)
 			assert.JSONEq(t, tc.expectedBody, rr.Body.String())
+			for _, h := range tc.responseHeaders {
+				requestID := rr.Header().Get(h)
+				assert.NotEmpty(t, requestID)
+			}
 		})
 	}
 
