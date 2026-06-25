@@ -6,6 +6,7 @@ import (
 	"RestAPI/internal/domain"
 	"RestAPI/mocks"
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -60,34 +61,33 @@ func TestCRUD(t *testing.T) {
 			},
 			responseHeaders: []string{"X-Request-Id"},
 		},
+		{
+			name:   "Fail Create Item (Database Error)",
+			method: http.MethodPost,
+			url:    "/domain",
+			body: `{
+				"item_opt1": "test1", 
+				"item_opt2": "test1"
+			}`,
+			expectedBody: `{
+				"error":   "Internal Server Error",
+				"details": "An error occurred on the server. Try again later."
+			}`,
+			expectedHTTPStatus: 500,
+			mockDBMethods: []func(m *mocks.MockRepositoryInterface){
+				func(m *mocks.MockRepositoryInterface) {
+					m.EXPECT().
+						CreateItem(
+							mock.MatchedBy(func(ctx context.Context) bool { return true }),
+							&domain.Item{ItemOpt1: "test1", ItemOpt2: "test1"},
+						).
+						Return(nil, errors.New("database timeout")).
+						Once()
+				},
+			},
+			responseHeaders: []string{},
+		},
 	}
-	//// Success Create
-	//mockDB.EXPECT().
-	//	CreateItem(mock.Anything, &domain.Item{ItemOpt1: "test", ItemOpt2: "test"}).
-	//	Return(&domain.Item{ID: 1, ItemOpt1: "test", ItemOpt2: "test"}, nil).
-	//	Once()
-	//// Success Update
-	//mockDB.EXPECT().
-	//	UpdateItem(mock.Anything, &domain.Item{ItemOpt1: "test2", ItemOpt2: "test2"}, int64(1)).
-	//	Return(&domain.Item{ID: 1, ItemOpt1: "test2", ItemOpt2: "test2"}, nil).
-	//	Once()
-	//// Success Delete
-	//mockDB.EXPECT().
-	//	DeleteItem(mock.Anything, int64(1)).
-	//	Return(nil).
-	//	Once()
-	// Success Get One
-	//mockDB.EXPECT().
-	//	GetItemByID(mock.MatchedBy(func(ctx context.Context) bool { return true }), int64(1)).
-	//	Return(&domain.Item{ID: 1, ItemOpt1: "test1", ItemOpt2: "test1"}, nil).
-	//	Once()
-	////Success Get All
-	//mockDB.EXPECT().
-	//	GetAllItems(mock.Anything, 1, 0).
-	//	Return([]*domain.Item{&domain.Item{ID: 1, ItemOpt1: "test1", ItemOpt2: "test1"}}, nil).
-	//	Once()
-
-	// httptest.NewServer()
 
 	for _, tc := range testCases {
 		// Prepare Repo Mocks
@@ -99,7 +99,7 @@ func TestCRUD(t *testing.T) {
 		testAppHandler := testApp.MainServerHandler()
 
 		t.Run(tc.name, func(t *testing.T) {
-			req, err := http.NewRequest(tc.method, tc.url, strings.NewReader(tc.expectedBody))
+			req, err := http.NewRequest(tc.method, tc.url, strings.NewReader(tc.body))
 			require.NoError(t, err)
 			rr := httptest.NewRecorder()
 			// Learn mock

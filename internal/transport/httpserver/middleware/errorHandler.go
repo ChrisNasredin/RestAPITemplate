@@ -67,7 +67,8 @@ func handleError(err error, errorMap map[error]int) (int, *ErrResponseJSON) {
 	}
 
 	return http.StatusInternalServerError, &ErrResponseJSON{
-		Error: "Internal Server Error",
+		Error:   "Internal Server Error",
+		Details: "An error occurred on the server. Try again later.",
 	}
 }
 
