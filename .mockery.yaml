@@ -1,5 +1,9 @@
 all: false
 packages:
-  RestAPI/internal/domain:
+  RestAPI/internal/app:
+    config:
+      dir: ./mocks/
+      pkgname: "mocks"
+      filename: "{{.InterfaceName}}.go"
     interfaces:
       RepositoryInterface:

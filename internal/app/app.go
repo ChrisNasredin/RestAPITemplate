@@ -4,53 +4,37 @@ import (
 	"RestAPI/internal/config"
 	"RestAPI/internal/domain"
 	"RestAPI/internal/metrics"
-	"RestAPI/internal/storage/postgres"
 	"RestAPI/internal/transport/httpserver"
 	"RestAPI/internal/transport/httpserver/middleware"
 	"RestAPI/internal/transport/httpserver/observability"
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 )
 
-type Database interface {
+type RepositoryInterface interface {
 	ItemsCount(ctx context.Context) (int64, error)
 	Close()
+	Ping(ctx context.Context) error
+	GetItemByID(ctx context.Context, id int64) (*domain.Item, error)
+	CreateItem(ctx context.Context, item *domain.Item) (*domain.Item, error)
+	GetAllItems(ctx context.Context, limit, offset int) ([]*domain.Item, error)
+	GetAllItemsCount(ctx context.Context) (int, error)
+	DeleteItem(ctx context.Context, id int64) error
+	UpdateItem(ctx context.Context, item *domain.UpdateItemInput, id int64) (*domain.Item, error)
 }
 type App struct {
 	cfg           *config.Config
 	log           *slog.Logger
-	storage       Database
+	storage       RepositoryInterface
 	APISrv        *http.Server
 	obsSrv        *http.Server
 	stopCtxCancel context.CancelFunc
 }
 
-func New(cfg *config.Config, log *slog.Logger) (*App, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	storage, err := postgres.New(
-		ctx,
-		&postgres.StorageConfig{
-			User:            cfg.Storage.User,
-			Password:        cfg.Storage.Password,
-			Host:            cfg.Storage.Host,
-			DBName:          cfg.Storage.DBName,
-			SSLMode:         cfg.Storage.SSLMode,
-			MaxConns:        cfg.Storage.StoragePool.MaxConns,
-			MinConns:        cfg.Storage.StoragePool.MinConns,
-			MaxConnLifetime: cfg.Storage.StoragePool.MaxConnLifetime,
-			ConnectTimeout:  cfg.Storage.StoragePool.ConnectTimeout,
-			MaxConnIdleTime: cfg.Storage.StoragePool.MaxConnIdleTime,
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to init storage: %w", err)
-	}
+func New(cfg *config.Config, log *slog.Logger, storage RepositoryInterface) (*App, error) {
 
 	// Observability http-server
 	obsRouter := http.NewServeMux()
@@ -134,4 +118,9 @@ func (a *App) Stop(ctx context.Context) {
 	}
 
 	a.log.Info("server stopped gracefully")
+}
+
+// MainServerHandler Handler for testHTTP
+func (a *App) MainServerHandler() http.Handler {
+	return a.APISrv.Handler
 }

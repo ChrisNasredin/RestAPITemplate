@@ -45,7 +45,30 @@ func main() {
 
 	log.Debug("debug logging enabled")
 
-	application, err := app.New(cfg, log)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	storage, err := postgres.New(
+		ctx,
+		&postgres.StorageConfig{
+			User:            cfg.Storage.User,
+			Password:        cfg.Storage.Password,
+			Host:            cfg.Storage.Host,
+			DBName:          cfg.Storage.DBName,
+			SSLMode:         cfg.Storage.SSLMode,
+			MaxConns:        cfg.Storage.StoragePool.MaxConns,
+			MinConns:        cfg.Storage.StoragePool.MinConns,
+			MaxConnLifetime: cfg.Storage.StoragePool.MaxConnLifetime,
+			ConnectTimeout:  cfg.Storage.StoragePool.ConnectTimeout,
+			MaxConnIdleTime: cfg.Storage.StoragePool.MaxConnIdleTime,
+		},
+	)
+
+	if err != nil {
+		panic("Failed to initialize storage: " + err.Error())
+	}
+
+	application, err := app.New(cfg, log, storage)
 	if err != nil {
 		log.Error("app initialization failed: %w", slog.Any("error", err))
 	}
